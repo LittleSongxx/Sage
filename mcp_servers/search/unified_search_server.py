@@ -17,6 +17,7 @@ from .search_providers import (
     SearchProviderEnum,
     SerpApiProvider,
     SerperProvider,
+    DashScopeProvider,
     TavilyProvider,
     BraveProvider,
     ZhipuProvider,
@@ -38,16 +39,24 @@ PROVIDER_CLASSES = {
     SearchProviderEnum.TAVILY: TavilyProvider,
     SearchProviderEnum.BRAVE: BraveProvider,
     SearchProviderEnum.ZHIPU: ZhipuProvider,
+    SearchProviderEnum.DASHSCOPE: DashScopeProvider,
     SearchProviderEnum.BOCHA: BochaProvider,
     SearchProviderEnum.SHUYAN: ShuyanProvider,
 }
+
+
+def _resolve_provider_api_key(provider_class) -> str:
+    resolver = getattr(provider_class, "resolve_api_key", None)
+    if callable(resolver):
+        return (resolver() or "").strip()
+    return (os.environ.get(provider_class.env_key) or "").strip()
 
 
 def get_available_providers() -> List[BaseSearchProvider]:
     """每次调用时重新检测可用的搜索引擎提供商"""
     available_providers = []
     for provider_enum, provider_class in PROVIDER_CLASSES.items():
-        api_key = os.environ.get(provider_class.env_key)
+        api_key = _resolve_provider_api_key(provider_class)
         if api_key:
             try:
                 provider_instance = provider_class(api_key)

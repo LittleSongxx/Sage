@@ -13,6 +13,7 @@ from common.core.request_identity import (
     get_target_user_id_for_role,
 )
 from common.core.render import Response
+from common.models.agent import AgentConfigDao
 from common.models.conversation import ConversationDao
 from common.schemas.agent import (
     AgentAbilitiesRequest,
@@ -148,6 +149,27 @@ async def delete(agent_id: str, http_request: Request):
     return await Response.succ(
         data={"agent_id": agent_id}, message=f"Agent '{agent_id}' 删除成功"
     )
+
+
+@agent_router.post("/{agent_id}/set-default")
+async def set_default_agent(agent_id: str, http_request: Request):
+    user_id = get_request_user_id(http_request)
+    role = get_request_role(http_request)
+    agent = await agent_service.get_agent(agent_id, user_id)
+    if not agent:
+        return await Response.error(message=f"Agent '{agent_id}' 不存在")
+
+    if role != "admin" and agent.user_id != user_id:
+        return await Response.error(code=403, message="无权设置该Agent为默认")
+
+    dao = AgentConfigDao()
+    success = await dao.set_default(agent_id, user_id=agent.user_id)
+
+    if success:
+        return await Response.succ(
+            data={"agent_id": agent_id}, message=f"Agent '{agent_id}' 已设为默认"
+        )
+    return await Response.error(message="设置默认 Agent 失败")
 
 
 @agent_router.post("/auto-generate")

@@ -422,7 +422,7 @@
                           :id="`tool-${tool.name}`" 
                           :checked="isRequiredTool(tool.name) || store.formData.availableTools.includes(tool.name)" 
                           :disabled="isRequiredTool(tool.name)"
-                          @update:checked="() => !isRequiredTool(tool.name) && store.toggleTool(tool.name)" 
+                          @update:checked="() => handleToolToggle(tool.name)" 
                           class="mt-0.5"
                         />
                         <div class="flex-1 min-w-0">
@@ -647,6 +647,208 @@
             </div>
           </section>
 
+          <section id="im" class="scroll-mt-6">
+            <div class="flex items-center gap-2 mb-5">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <MessageSquare class="h-4 w-4 text-primary" />
+              </div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-semibold">{{ t('agentEdit.imChannels') }}</h2>
+              </div>
+              <div class="ml-auto flex items-center gap-2">
+                <span class="text-xs text-muted-foreground">({{ enabledIMChannelsCount }})</span>
+              </div>
+            </div>
+            <div class="pl-10 space-y-4">
+              <div v-if="!store.formData.id" class="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                {{ t('agentEdit.agentNotSaved') }}
+              </div>
+              <template v-else>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button
+                    v-for="provider in imProviders"
+                    :key="provider.key"
+                    variant="outline"
+                    size="sm"
+                    class="justify-start"
+                    :class="activeIMProvider === provider.key ? 'border-primary text-primary bg-primary/5' : ''"
+                    @click="activeIMProvider = provider.key"
+                  >
+                    {{ provider.label }}
+                  </Button>
+                </div>
+
+                <div v-if="isLoadingIMConfig" class="rounded-lg border bg-muted/10 p-4">
+                  <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader class="h-4 w-4 animate-spin" />
+                    {{ t('agentEdit.loading') || '加载中...' }}
+                  </div>
+                </div>
+
+                <div v-else class="space-y-4">
+                  <div
+                    v-for="provider in imProviders"
+                    v-show="activeIMProvider === provider.key"
+                    :key="`im-provider-${provider.key}`"
+                    class="space-y-4"
+                  >
+                    <div class="flex flex-col gap-3 rounded-lg border bg-muted/10 p-4 md:flex-row md:items-center md:justify-between">
+                      <div class="space-y-1">
+                        <div class="text-sm font-medium">{{ provider.label }}</div>
+                        <p class="text-xs text-muted-foreground">{{ getIMProviderDescription(provider.key) }}</p>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          @click="testIMConnection(provider.key)"
+                          :disabled="testingIM[provider.key]"
+                        >
+                          <Loader v-if="testingIM[provider.key]" class="mr-2 h-3.5 w-3.5 animate-spin" />
+                          <Play v-else class="mr-2 h-3.5 w-3.5" />
+                          {{ t('agentEdit.testConnection') }}
+                        </Button>
+                        <div class="flex items-center gap-2">
+                          <Label class="text-xs text-muted-foreground">{{ t('agentEdit.enableProvider') }}</Label>
+                          <Switch
+                            :checked="imConfig[provider.key]?.enabled"
+                            :disabled="!canToggleProvider(provider.key)"
+                            @update:checked="(checked) => handleEnableSwitch(provider.key, checked)"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="rounded-lg border px-4 py-3 text-sm" :class="getIMStatusClass(provider.key)">
+                      {{ getIMStatusText(provider.key) }}
+                    </div>
+
+                    <div v-if="provider.key === 'wechat_work'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormItem :label="t('agentEdit.imPlaceholder.wechatWorkBotId')">
+                        <Input
+                          v-model="imConfig.wechat_work.config.bot_id"
+                          :placeholder="t('agentEdit.imPlaceholder.wechatWorkBotId')"
+                          :disabled="imConfig.wechat_work.enabled || testingIM.wechat_work"
+                          class="h-10"
+                        />
+                      </FormItem>
+                      <FormItem :label="t('agentEdit.imPlaceholder.secret')">
+                        <Input
+                          v-model="imConfig.wechat_work.config.secret"
+                          :placeholder="t('agentEdit.imPlaceholder.secret')"
+                          :disabled="imConfig.wechat_work.enabled || testingIM.wechat_work"
+                          class="h-10"
+                        />
+                      </FormItem>
+                    </div>
+
+                    <div v-if="provider.key === 'wechat_personal'" class="space-y-4">
+                      <div class="rounded-lg border bg-background p-4 space-y-3">
+                        <p class="text-sm text-muted-foreground">{{ t('agentEdit.wechatPersonalIntro') }}</p>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            @click="startWeChatPersonalLogin"
+                            :disabled="wechatPersonalLogin.loading || imConfig.wechat_personal.enabled"
+                          >
+                            <Loader v-if="wechatPersonalLogin.loading" class="mr-2 h-3.5 w-3.5 animate-spin" />
+                            <QrCode v-else class="mr-2 h-3.5 w-3.5" />
+                            {{ t('agentEdit.wechatPersonalScanToken') }}
+                          </Button>
+                          <span v-if="wechatPersonalLogin.status" class="text-xs text-muted-foreground">
+                            {{ getWeChatPersonalStatusText() }}
+                          </span>
+                        </div>
+                        <div v-if="wechatPersonalLogin.qrUrl" class="space-y-2">
+                          <a
+                            :href="wechatPersonalLogin.qrUrl"
+                            target="_blank"
+                            rel="noreferrer"
+                            class="block break-all text-xs text-primary underline"
+                          >
+                            {{ wechatPersonalLogin.qrUrl }}
+                          </a>
+                          <Button variant="ghost" size="sm" class="h-8 px-2 text-xs" @click="copyWeChatPersonalUrl">
+                            <Copy class="mr-1.5 h-3.5 w-3.5" />
+                            {{ t('agentEdit.wechatPersonalCopyLink') }}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <FormItem :label="t('agentEdit.imPlaceholder.botToken')">
+                        <Textarea
+                          v-model="imConfig.wechat_personal.config.bot_token"
+                          :rows="3"
+                          :placeholder="t('agentEdit.imPlaceholder.botToken')"
+                          :disabled="imConfig.wechat_personal.enabled || testingIM.wechat_personal"
+                        />
+                      </FormItem>
+                      <FormItem :label="t('agentEdit.imPlaceholder.botId')">
+                        <Input
+                          v-model="imConfig.wechat_personal.config.bot_id"
+                          :placeholder="t('agentEdit.imPlaceholder.botId')"
+                          :disabled="imConfig.wechat_personal.enabled || testingIM.wechat_personal"
+                          class="h-10"
+                        />
+                      </FormItem>
+                    </div>
+
+                    <div v-if="provider.key === 'dingtalk'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormItem :label="t('agentEdit.imPlaceholder.dingtalkClientId')">
+                        <Input
+                          v-model="imConfig.dingtalk.config.client_id"
+                          :placeholder="t('agentEdit.imPlaceholder.dingtalkClientId')"
+                          :disabled="imConfig.dingtalk.enabled || testingIM.dingtalk"
+                          class="h-10"
+                        />
+                      </FormItem>
+                      <FormItem :label="t('agentEdit.imPlaceholder.clientSecret')">
+                        <Input
+                          v-model="imConfig.dingtalk.config.client_secret"
+                          :placeholder="t('agentEdit.imPlaceholder.clientSecret')"
+                          :disabled="imConfig.dingtalk.enabled || testingIM.dingtalk"
+                          class="h-10"
+                        />
+                      </FormItem>
+                    </div>
+
+                    <div v-if="provider.key === 'feishu'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormItem :label="t('agentEdit.imPlaceholder.feishuAppId')">
+                        <Input
+                          v-model="imConfig.feishu.config.app_id"
+                          :placeholder="t('agentEdit.imPlaceholder.feishuAppId')"
+                          :disabled="imConfig.feishu.enabled || testingIM.feishu"
+                          class="h-10"
+                        />
+                      </FormItem>
+                      <FormItem :label="t('agentEdit.imPlaceholder.appSecret')">
+                        <Input
+                          v-model="imConfig.feishu.config.app_secret"
+                          :placeholder="t('agentEdit.imPlaceholder.appSecret')"
+                          :disabled="imConfig.feishu.enabled || testingIM.feishu"
+                          class="h-10"
+                        />
+                      </FormItem>
+                    </div>
+
+                    <div v-if="provider.key === 'imessage'" class="space-y-4">
+                      <FormItem :label="t('agentEdit.imessageAllowedSenders')">
+                        <Textarea
+                          :model-value="(imConfig.imessage.config.allowed_senders || []).join('\n')"
+                          :rows="5"
+                          :placeholder="t('agentEdit.imessageAllowedSendersHint')"
+                          :disabled="imConfig.imessage.enabled || testingIM.imessage"
+                          @input="updateIMessageAllowedSenders($event.target.value)"
+                        />
+                      </FormItem>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+
           <!-- System Context Section -->
           <section id="context" class="scroll-mt-6">
             <div class="flex items-center gap-2 mb-5">
@@ -823,13 +1025,14 @@ import { useAgentEditStore } from '../stores/agentEdit'
 import { useLanguage } from '../utils/i18n.js'
 import { getMcpServerLabel } from '../utils/mcpLabels.js'
 import { agentAPI } from '../api/agent.js'
+import request from '../utils/request.js'
 import { modelProviderAPI } from '@/api/modelProvider'
 import { skillAPI } from '../api/skill.js'
 import { toast } from 'vue-sonner'
 import { 
   Loader, ChevronLeft, ChevronRight, ChevronDown, Save, Check, Plus, Trash2, 
   Sparkles, Bot, Wrench, Search, Server, Code, User, Cpu, Database, Workflow,
-  FileText, X, Image as ImageIcon, RefreshCw
+  FileText, X, Image as ImageIcon, RefreshCw, MessageSquare, Play, QrCode, Copy
 } from 'lucide-vue-next'
 
 // UI Components
@@ -865,6 +1068,39 @@ const contentRef = ref(null)
 const activeSection = ref('basic')
 const agentSkills = ref([])
 const loadingAgentSkills = ref(false)
+
+const IM_TOOLS = ['send_message_through_im', 'send_file_through_im', 'send_image_through_im']
+const IM_PROVIDERS = ['wechat_work', 'wechat_personal', 'dingtalk', 'feishu', 'imessage']
+
+const createDefaultIMConfig = () => ({
+  wechat_work: { enabled: false, config: { bot_id: '', secret: '' } },
+  wechat_personal: { enabled: false, config: { bot_token: '', bot_id: '' } },
+  dingtalk: { enabled: false, config: { client_id: '', client_secret: '' } },
+  feishu: { enabled: false, config: { app_id: '', app_secret: '' } },
+  imessage: { enabled: false, config: { allowed_senders: [] } }
+})
+
+const createDefaultIMTestStatus = () => Object.fromEntries(
+  IM_PROVIDERS.map(provider => [provider, { tested: false, passed: false, message: '' }])
+)
+
+const createDefaultFrozenConfig = () => Object.fromEntries(
+  IM_PROVIDERS.map(provider => [provider, null])
+)
+
+const activeIMProvider = ref('wechat_work')
+const isLoadingIMConfig = ref(false)
+const imConfig = ref(createDefaultIMConfig())
+const testingIM = ref({})
+const imTestStatus = ref(createDefaultIMTestStatus())
+const imFrozenConfig = ref(createDefaultFrozenConfig())
+const wechatPersonalLogin = ref({
+  loading: false,
+  qrcode: '',
+  qrUrl: '',
+  status: '',
+  polling: false
+})
 
 // 技能同步状态
 const syncingSkills = ref(new Set())  // 正在同步的技能名称集合
@@ -909,6 +1145,7 @@ const sections = computed(() => {
     { id: 'tools', label: t('agent.availableTools'), icon: Wrench },
     { id: 'skills', label: t('agent.availableSkills'), icon: Bot },
     { id: 'knowledgeBases', label: t('agent.availableKnowledgeBases'), icon: Database },
+    { id: 'im', label: t('agentEdit.imChannels'), icon: MessageSquare },
     { id: 'context', label: t('agent.systemContext'), icon: FileText },
     { id: 'workflows', label: t('agent.workflows'), icon: Workflow },
   ]
@@ -996,6 +1233,480 @@ const refreshSkills = async () => {
   await loadAgentAvailableSkills(props.agent.id)
 }
 
+const cloneDeep = (value) => JSON.parse(JSON.stringify(value))
+
+const hasMeaningfulValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.some(item => hasMeaningfulValue(item))
+  }
+  if (value === null || value === undefined) {
+    return false
+  }
+  if (typeof value === 'string') {
+    return value.trim().length > 0
+  }
+  return Boolean(value)
+}
+
+const getIMProviderLabel = (provider) => {
+  const labelMap = {
+    wechat_work: 'agentEdit.imProvider.wechatWork',
+    wechat_personal: 'agentEdit.imProvider.wechatPersonal',
+    dingtalk: 'agentEdit.imProvider.dingtalk',
+    feishu: 'agentEdit.imProvider.feishu',
+    imessage: 'agentEdit.imProvider.imessage'
+  }
+  return t(labelMap[provider]) || provider
+}
+
+const enabledIMChannelsCount = computed(() => IM_PROVIDERS.filter(provider => imConfig.value[provider]?.enabled).length)
+const hasEnabledIMChannel = computed(() => enabledIMChannelsCount.value > 0)
+const imProviders = computed(() => IM_PROVIDERS.map(provider => ({ key: provider, label: getIMProviderLabel(provider) })))
+
+const cloneProviderConfig = (provider) => cloneDeep(imConfig.value[provider]?.config || {})
+
+const hasProviderConfig = (provider) => {
+  const config = imConfig.value[provider]?.config || {}
+  return Object.values(config).some(value => hasMeaningfulValue(value))
+}
+
+const isConfigFrozen = (provider) => JSON.stringify(imFrozenConfig.value[provider] || {}) === JSON.stringify(cloneProviderConfig(provider))
+const canEnableProvider = (provider) => Boolean(imTestStatus.value[provider]?.passed) && isConfigFrozen(provider)
+const canToggleProvider = (provider) => Boolean(imConfig.value[provider]?.enabled) || canEnableProvider(provider)
+
+const getIMStatusText = (provider) => {
+  if (imConfig.value[provider]?.enabled) {
+    return t('agentEdit.imChannelEnabled')
+  }
+
+  if (canEnableProvider(provider)) {
+    return imTestStatus.value[provider]?.message || t('agentEdit.testSuccess')
+  }
+
+  if (imTestStatus.value[provider]?.tested && !imTestStatus.value[provider]?.passed) {
+    return imTestStatus.value[provider]?.message || t('agentEdit.testFailed')
+  }
+
+  if (hasProviderConfig(provider) && imFrozenConfig.value[provider] && !isConfigFrozen(provider)) {
+    return t('agentEdit.retestAfterChange')
+  }
+
+  return t('agentEdit.fillAndTestFirst')
+}
+
+const getIMStatusClass = (provider) => {
+  if (imConfig.value[provider]?.enabled) {
+    return 'border-primary/20 bg-primary/5 text-primary'
+  }
+  if (canEnableProvider(provider)) {
+    return 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300'
+  }
+  if (imTestStatus.value[provider]?.tested && !imTestStatus.value[provider]?.passed) {
+    return 'border-destructive/20 bg-destructive/5 text-destructive'
+  }
+  return 'border-muted/60 bg-muted/20 text-muted-foreground'
+}
+
+const getIMProviderDescription = (provider) => {
+  if (provider === 'wechat_personal') {
+    return t('agentEdit.wechatPersonalIntro')
+  }
+  if (provider === 'imessage') {
+    return t('agentEdit.imessageIntro')
+  }
+  return getIMStatusText(provider)
+}
+
+const updateIMessageAllowedSenders = (value) => {
+  imConfig.value.imessage.config.allowed_senders = value
+    .split('\n')
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+const setIMChannelsOnForm = () => {
+  const channels = {}
+  IM_PROVIDERS.forEach(provider => {
+    const providerConfig = cloneProviderConfig(provider)
+    if (imConfig.value[provider]?.enabled || Object.values(providerConfig).some(value => hasMeaningfulValue(value))) {
+      channels[provider] = {
+        enabled: Boolean(imConfig.value[provider]?.enabled),
+        config: providerConfig
+      }
+    }
+  })
+  store.formData.im_channels = channels
+}
+
+const syncIMTools = () => {
+  if (!Array.isArray(store.formData.availableTools)) {
+    store.formData.availableTools = []
+  }
+
+  const currentTools = [...store.formData.availableTools]
+  const nextTools = currentTools.filter(toolName => !IM_TOOLS.includes(toolName))
+
+  if (hasEnabledIMChannel.value) {
+    IM_TOOLS.forEach(toolName => {
+      if (!nextTools.includes(toolName)) {
+        nextTools.push(toolName)
+      }
+    })
+  }
+
+  const changed =
+    currentTools.length !== nextTools.length ||
+    currentTools.some(toolName => !nextTools.includes(toolName)) ||
+    nextTools.some(toolName => !currentTools.includes(toolName))
+
+  if (changed) {
+    store.formData.availableTools = nextTools
+  }
+
+  setIMChannelsOnForm()
+  return changed
+}
+
+const autoSaveAgentConfig = async () => {
+  if (!store.formData.id) {
+    return
+  }
+  store.prepareForSave()
+  const plainData = JSON.parse(JSON.stringify(store.formData))
+  await agentAPI.updateAgent(store.formData.id, plainData)
+}
+
+const resetIMConfig = () => {
+  imConfig.value = createDefaultIMConfig()
+  testingIM.value = {}
+  imTestStatus.value = createDefaultIMTestStatus()
+  imFrozenConfig.value = createDefaultFrozenConfig()
+  wechatPersonalLogin.value = {
+    loading: false,
+    qrcode: '',
+    qrUrl: '',
+    status: '',
+    polling: false
+  }
+  activeIMProvider.value = 'wechat_work'
+  setIMChannelsOnForm()
+}
+
+const applyLoadedIMConfig = (channels = {}) => {
+  const nextConfig = createDefaultIMConfig()
+  const nextTestStatus = createDefaultIMTestStatus()
+  const nextFrozenConfig = createDefaultFrozenConfig()
+
+  IM_PROVIDERS.forEach(provider => {
+    const channel = channels[provider]
+    if (!channel) {
+      return
+    }
+
+    nextConfig[provider] = {
+      enabled: Boolean(channel.enabled),
+      config: {
+        ...nextConfig[provider].config,
+        ...(channel.config || {})
+      }
+    }
+
+    const providerHasConfig = Object.values(nextConfig[provider].config).some(value => hasMeaningfulValue(value))
+    if (providerHasConfig) {
+      nextFrozenConfig[provider] = cloneDeep(nextConfig[provider].config)
+      nextTestStatus[provider] = {
+        tested: true,
+        passed: true,
+        message: t('agentEdit.testSuccess')
+      }
+    }
+  })
+
+  imConfig.value = nextConfig
+  testingIM.value = {}
+  imTestStatus.value = nextTestStatus
+  imFrozenConfig.value = nextFrozenConfig
+  wechatPersonalLogin.value = {
+    loading: false,
+    qrcode: '',
+    qrUrl: '',
+    status: '',
+    polling: false
+  }
+  activeIMProvider.value =
+    IM_PROVIDERS.find(provider => nextConfig[provider].enabled) ||
+    IM_PROVIDERS.find(provider => Object.values(nextConfig[provider].config).some(value => hasMeaningfulValue(value))) ||
+    'wechat_work'
+  setIMChannelsOnForm()
+}
+
+const loadIMConfig = async (agentId = store.formData.id) => {
+  if (!agentId) {
+    resetIMConfig()
+    return
+  }
+
+  isLoadingIMConfig.value = true
+  try {
+    const result = await request.get(`/api/im/agent/${agentId}/im_channels`)
+    applyLoadedIMConfig(result?.channels || {})
+    const toolsChanged = syncIMTools()
+    if (toolsChanged) {
+      try {
+        await autoSaveAgentConfig()
+      } catch (saveError) {
+        console.error('Failed to auto save agent after loading IM config:', saveError)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load IM config:', error)
+    resetIMConfig()
+    toast.error(t('agentEdit.loadImConfigFailed') || '加载 IM 配置失败')
+  } finally {
+    isLoadingIMConfig.value = false
+  }
+}
+
+const testIMConnection = async (provider) => {
+  if (!store.formData.id) {
+    toast.error(t('agentEdit.agentNotSaved') || '请先保存Agent')
+    return
+  }
+
+  testingIM.value = { ...testingIM.value, [provider]: true }
+  try {
+    const result = await request.post(
+      `/api/im/agent/${store.formData.id}/im_channels/${provider}/test`,
+      { config: cloneProviderConfig(provider) }
+    )
+
+    if (result?.success) {
+      imFrozenConfig.value = {
+        ...imFrozenConfig.value,
+        [provider]: cloneProviderConfig(provider)
+      }
+      imTestStatus.value = {
+        ...imTestStatus.value,
+        [provider]: {
+          tested: true,
+          passed: true,
+          message: result.message || t('agentEdit.testSuccess')
+        }
+      }
+      toast.success(result.message || t('agentEdit.testSuccess'))
+      return
+    }
+
+    imTestStatus.value = {
+      ...imTestStatus.value,
+      [provider]: {
+        tested: true,
+        passed: false,
+        message: result?.message || t('agentEdit.testFailed')
+      }
+    }
+    toast.error(result?.message || t('agentEdit.testFailed'))
+  } catch (error) {
+    console.error('Failed to test IM connection:', error)
+    imTestStatus.value = {
+      ...imTestStatus.value,
+      [provider]: {
+        tested: true,
+        passed: false,
+        message: error.message || t('agentEdit.testFailed')
+      }
+    }
+    toast.error(error.message || t('agentEdit.testFailed'))
+  } finally {
+    testingIM.value = { ...testingIM.value, [provider]: false }
+  }
+}
+
+const saveIMChannelConfig = async (provider) => {
+  if (!store.formData.id) {
+    return false
+  }
+
+  try {
+    await request.post(`/api/im/agent/${store.formData.id}/im_channels`, {
+      [provider]: {
+        enabled: Boolean(imConfig.value[provider]?.enabled),
+        config: cloneProviderConfig(provider)
+      }
+    })
+    setIMChannelsOnForm()
+    return true
+  } catch (error) {
+    console.error('Failed to save IM config:', error)
+    toast.error(error.message || t('agentEdit.saveConfigFailed'))
+    return false
+  }
+}
+
+const handleEnableSwitch = async (provider, checked) => {
+  if (!store.formData.id) {
+    toast.error(t('agentEdit.agentNotSaved') || '请先保存Agent')
+    return
+  }
+
+  if (checked && !canEnableProvider(provider)) {
+    toast.error(isConfigFrozen(provider) ? t('agentEdit.enableAfterTest') : t('agentEdit.retestAfterChange'))
+    return
+  }
+
+  const previousEnabled = Boolean(imConfig.value[provider]?.enabled)
+  imConfig.value[provider] = {
+    ...imConfig.value[provider],
+    enabled: checked
+  }
+
+  const saved = await saveIMChannelConfig(provider)
+  if (!saved) {
+    imConfig.value[provider] = {
+      ...imConfig.value[provider],
+      enabled: previousEnabled
+    }
+    return
+  }
+
+  const toolsChanged = syncIMTools()
+  if (toolsChanged) {
+    try {
+      await autoSaveAgentConfig()
+    } catch (error) {
+      console.error('Failed to auto save agent after IM change:', error)
+      toast.error(t('agentEdit.saveConfigFailed'))
+    }
+  }
+}
+
+const pollWeChatPersonalStatus = async (qrcode) => {
+  if (!store.formData.id || !qrcode) {
+    return
+  }
+
+  wechatPersonalLogin.value = {
+    ...wechatPersonalLogin.value,
+    polling: true
+  }
+
+  try {
+    const result = await request.post(
+      `/api/im/agent/${store.formData.id}/im_channels/wechat_personal/qrcode/status`,
+      { qrcode },
+      { timeout: 45000 }
+    )
+    const status = result?.status || 'wait'
+
+    wechatPersonalLogin.value = {
+      ...wechatPersonalLogin.value,
+      status,
+      polling: status !== 'confirmed' && status !== 'expired'
+    }
+
+    if (status === 'confirmed') {
+      if (result?.bot_token) {
+        imConfig.value.wechat_personal.config.bot_token = result.bot_token
+      }
+      if (result?.bot_id) {
+        imConfig.value.wechat_personal.config.bot_id = result.bot_id
+      }
+      await testIMConnection('wechat_personal')
+      return
+    }
+
+    if (status === 'expired') {
+      return
+    }
+
+    if (wechatPersonalLogin.value.qrcode === qrcode) {
+      setTimeout(() => {
+        if (wechatPersonalLogin.value.qrcode === qrcode) {
+          pollWeChatPersonalStatus(qrcode)
+        }
+      }, 1500)
+    }
+  } catch (error) {
+    console.error('Failed to poll WeChat personal login status:', error)
+    wechatPersonalLogin.value = {
+      ...wechatPersonalLogin.value,
+      polling: false
+    }
+  }
+}
+
+const startWeChatPersonalLogin = async () => {
+  if (!store.formData.id) {
+    toast.error(t('agentEdit.agentNotSaved') || '请先保存Agent')
+    return
+  }
+
+  wechatPersonalLogin.value = {
+    ...wechatPersonalLogin.value,
+    loading: true,
+    status: 'wait',
+    polling: false
+  }
+
+  try {
+    const result = await request.post(
+      `/api/im/agent/${store.formData.id}/im_channels/wechat_personal/qrcode`,
+      {}
+    )
+
+    if (!result?.qrcode || !result?.qrcode_url) {
+      throw new Error(t('agentEdit.saveConfigFailed'))
+    }
+
+    wechatPersonalLogin.value = {
+      loading: false,
+      qrcode: result.qrcode,
+      qrUrl: result.qrcode_url,
+      status: 'wait',
+      polling: false
+    }
+
+    pollWeChatPersonalStatus(result.qrcode)
+  } catch (error) {
+    console.error('Failed to start WeChat personal login:', error)
+    wechatPersonalLogin.value = {
+      ...wechatPersonalLogin.value,
+      loading: false,
+      polling: false,
+      status: ''
+    }
+    toast.error(error.message || t('agentEdit.saveConfigFailed'))
+  }
+}
+
+const getWeChatPersonalStatusText = () => {
+  const status = wechatPersonalLogin.value.status
+  if (status === 'scaned') {
+    return t('agentEdit.wechatPersonalScanned')
+  }
+  if (status === 'confirmed') {
+    return t('agentEdit.wechatPersonalConfirmed')
+  }
+  if (status === 'expired') {
+    return t('agentEdit.wechatPersonalExpired')
+  }
+  return t('agentEdit.wechatPersonalLoading')
+}
+
+const copyWeChatPersonalUrl = async () => {
+  if (!wechatPersonalLogin.value.qrUrl) {
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(wechatPersonalLogin.value.qrUrl)
+    toast.success(t('agentEdit.linkCopied'))
+  } catch (error) {
+    console.error('Failed to copy WeChat personal link:', error)
+    toast.error(t('agentEdit.copyFailed'))
+  }
+}
+
 // Initialize
 onMounted(() => {
   store.initForm(props.agent)
@@ -1007,6 +1718,9 @@ onMounted(() => {
   // 如果是编辑现有agent，加载agent可用技能列表
   if (props.agent && props.agent.id) {
     loadAgentAvailableSkills(props.agent.id)
+    loadIMConfig(props.agent.id)
+  } else {
+    resetIMConfig()
   }
 })
 
@@ -1030,8 +1744,10 @@ watch(() => props.agent, (newAgent) => {
   // 如果是编辑现有agent，加载agent可用技能列表
   if (newAgent && newAgent.id) {
     loadAgentAvailableSkills(newAgent.id)
+    loadIMConfig(newAgent.id)
   } else {
     agentSkills.value = []
+    resetIMConfig()
   }
 }, { immediate: true })
 
@@ -1084,6 +1800,7 @@ const loadData = async () => {
 const handleSave = async (shouldExit = true) => {
   saving.value = true
   try {
+    setIMChannelsOnForm()
     store.prepareForSave()
     const plainData = JSON.parse(JSON.stringify(store.formData))
     await new Promise((resolve) => {
@@ -1233,7 +1950,21 @@ const REQUIRED_TOOLS_FOR_SKILLS = [
 
 const isRequiredTool = (toolName) => {
   const hasSkills = store.formData.availableSkills?.length > 0
-  return hasSkills && REQUIRED_TOOLS_FOR_SKILLS.includes(toolName)
+  const isRequiredForIM = hasEnabledIMChannel.value && IM_TOOLS.includes(toolName)
+  return isRequiredForIM || (hasSkills && REQUIRED_TOOLS_FOR_SKILLS.includes(toolName))
+}
+
+const handleToolToggle = (toolName) => {
+  if (isRequiredTool(toolName)) {
+    return
+  }
+
+  if (IM_TOOLS.includes(toolName) && !hasEnabledIMChannel.value) {
+    toast.error(t('agentEdit.enableImFirst'))
+    return
+  }
+
+  store.toggleTool(toolName)
 }
 
 const filteredTools = computed(() => {
@@ -1267,7 +1998,7 @@ const displayedTools = computed(() => {
 const selectAllToolsInGroup = () => {
   const currentTools = displayedTools.value
   currentTools.forEach(tool => {
-    if (!isRequiredTool(tool.name) && !store.formData.availableTools.includes(tool.name)) {
+    if (!isRequiredTool(tool.name) && (!IM_TOOLS.includes(tool.name) || hasEnabledIMChannel.value) && !store.formData.availableTools.includes(tool.name)) {
       store.formData.availableTools.push(tool.name)
     }
   })

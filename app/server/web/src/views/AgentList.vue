@@ -140,7 +140,7 @@
 
                 <CardContent class="flex flex-1 items-center justify-center px-3 pb-3 pt-1">
                   <div class="grid w-full grid-cols-2 gap-1.5">
-                    <Button v-if="!agent.is_default" variant="outline" class="h-8 w-full justify-center gap-1 rounded-xl px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary" @click.stop="handleSetDefault(agent); toggleFlip(agent.id)">
+                    <Button v-if="!agent.is_default && canEdit(agent)" variant="outline" class="h-8 w-full justify-center gap-1 rounded-xl px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary" @click.stop="handleSetDefault(agent); toggleFlip(agent.id)">
                       <Star class="w-3.5 h-3.5" />
                       <span class="truncate">{{ t('agent.setDefault') }}</span>
                     </Button>
@@ -218,7 +218,7 @@
             </div>
 
             <div class="flex min-w-[196px] items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button v-if="!agent.is_default" variant="ghost" size="icon" class="h-8 w-8 rounded-full" @click.stop="handleSetDefault(agent)">
+              <Button v-if="!agent.is_default && canEdit(agent)" variant="ghost" size="icon" class="h-8 w-8 rounded-full" @click.stop="handleSetDefault(agent)">
                 <Star class="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full" @click.stop="openUsageModal(agent)">

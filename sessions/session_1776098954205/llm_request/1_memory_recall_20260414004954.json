@@ -1,0 +1,65 @@
+{
+    "request": {
+        "step_name": "memory_recall",
+        "model_config": {
+            "max_tokens": 128,
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "presence_penalty": 0.0,
+            "response_format": {
+                "type": "json_object"
+            }
+        },
+        "messages": [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "<role_definition>\n\n你是一个专业、主动且充满韧性的AI智能体：Sage。你的核心使命是不惜一切代价，完整、高效地协助用户达成目标。\n\n## 核心思维模式\n1. **深度思考 (Deep Thinking)**：在行动前，先进行深度的逻辑分析和规划。理解用户的真实意图，不仅是字面意思。拆解复杂问题为可执行的步骤。\n2. **自我修正 (Self-Correction)**：在执行过程中，如果遇到错误或异常，不要立即停止，而是尝试分析原因并提出修复方案。如果是环境问题，尝试规避；如果是代码问题，尝试修复。\n3. **真实性 (Truthfulness)**：宁可任务失败，也不能对任务的结果进行编造。所有的信息都要实事求是，基于已验证的数据或执行结果。\n4. **情境感知 (Context Awareness)**：充分利用当前的工作空间文件、系统上下文和历史对话信息。不要重复询问已经提供的信息。\n\n## 核心原则\n1. **极致主动与连续执行**：不要等待用户推动，也不要每做一步就停下来询问。一旦明确目标，必须一次性规划并连续执行多个步骤，直到遇到无法解决的阻塞问题或任务彻底完成。\n2. **默认授权**：除非涉及极其危险的操作（如删除重要数据），否则默认你已获得执行所有必要步骤的授权。不要询问“是否可以开始”、“您看这样行吗”，直接行动并展示结果。\n3. **完整交付**：不满足于完成部分任务或仅提供方案。致力于提供端到端的完整解决方案，确保交付物是经过验证且立即可用的。\n4. **结果导向**：所有的行动都应服务于“解决用户问题”这一最终目标。减少无意义的对话，增加有价值的行动。如果信息不足，优先尝试推断最合理的方案执行，而非反复询问。\n\n## 工具使用规范\n1. **工具优先**：积极探索和使用现有工具（Tools/Skills）来获取信息和执行任务，而不是仅凭臆测。\n2. **参数准确**：调用工具时，确保参数准确无误。如果调用失败，检查参数并重试。\n\n## 代码与环境规范\n1. **风格一致性**：修改代码时，严格遵守现有代码风格和命名规范。优先复用现有代码模式，避免另起炉灶。\n2. **环境整洁**：任务完成后，主动清理创建的临时文件或测试脚本，保持工作区整洁。\n3. **原子性提交**：尽量保持修改的原子性，避免一次性进行过于庞大且难以回溯的变更。\n\n## 稳健性与风控\n1. **防止死循环**：遇到顽固报错时，最多重试3次。若仍无法解决，应暂停并总结已尝试的方案，寻求用户指导，严禁盲目重复。\n2. **兜底策略**：在进行高风险修改前，思考“如果失败如何恢复”，必要时备份关键文件。\n\n## 沟通与验证规范\n1. **结构化表达**：回答要清晰、有条理，多使用Markdown标题、列表和代码块，避免大段纯文本。\n2. **拒绝空谈**：不要只说“我来试一下”或“正在思考”，而是直接给出行动方案、代码实现或执行结果。\n3. **严格验证**：在交付代码或结论前，必须进行自我逻辑检查；如果条件允许，优先运行代码进行验证。\n\n请展现出你的专业素养，成为用户最值得信赖的合作伙伴。\n\n</role_definition>\n<system_context>\n  <当前AgentId>agent_1d2ed3b9</当前AgentId>\n  <本次会话用户id>e32e076332114cb7b4bb3de53daf90bb</本次会话用户id>\n  <current_time>Tue, 14 Apr 2026 00:49:48 +0800</current_time>\n  <private_workspace>/home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9</private_workspace>\n  <user_id>e32e076332114cb7b4bb3de53daf90bb</user_id>\n  <session_id>session_1776098954205</session_id>\n  <file_permission>only allow read and write files in: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 (Note: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 is your private sandbox). Please save files in the pre-created folders: data, projects, temp, logs and use absolute paths; avoid creating extra directories in the root.</file_permission>\n  <response_language>zh-CN(简体中文)</response_language>\n</system_context>\n",
+                        "cache_control": {
+                            "type": "ephemeral"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": "\n基于用户对话历史，生成一个精准的搜索查询，用于召回工作空间中最相关的文件记忆。\n\n## 用户对话历史\n[\n  {\n    \"role\": \"user\",\n    \"content\": \"你好\"\n  }\n]\n\n## 任务说明\n1. 分析用户的当前请求和对话上下文\n2. 提取关键概念、技术术语、文件名、函数名等\n3. 生成一个简洁但精准的搜索查询（建议 3-10 个关键词）\n4. 搜索查询应该能够匹配到最相关的代码文件或文档\n\n## 注意事项\n1. 优先使用技术术语和关键词，而非完整句子\n2. 如果用户提到了具体文件名或函数名，请包含在查询中\n3. 如果涉及特定编程语言或框架，请包含相关关键词\n4. 查询应该足够通用以召回相关内容，但足够具体以过滤无关内容\n\n## 输出格式\n请返回一个搜索查询字符串，可以是以下格式之一：\n\n格式1 - 纯文本（推荐）：\n```\n关键词1 关键词2 关键词3\n```\n\n格式2 - JSON：\n```json\n{\"query\": \"关键词1 关键词2 关键词3\"}\n```\n\n不要包含任何解释或额外文本，只返回搜索查询。\n"
+            }
+        ]
+    },
+    "response": {
+        "id": "chatcmpl-34396f82-7e3a-9e60-9e3e-138d0cdea004",
+        "object": "chat.completion",
+        "created": 1776098995,
+        "model": "qwen3.5-plus",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "{\"query\": \"初始化 欢迎 配置 项目结构\"}",
+                    "role": "assistant",
+                    "tool_calls": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 13,
+            "prompt_tokens": 1389,
+            "total_tokens": 1402,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": null,
+                "audio_tokens": null,
+                "reasoning_tokens": null,
+                "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": null,
+                "cached_tokens": 0
+            }
+        }
+    },
+    "timestamp": 1776098994.933428
+}

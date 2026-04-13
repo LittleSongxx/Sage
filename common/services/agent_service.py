@@ -284,7 +284,7 @@ async def create_agent(
                 error_detail=f"Agent '{agent_name}' 已存在",
             )
 
-        existing_default = await dao.get_default()
+        existing_default = await dao.get_default(user_id=user_id)
         if is_default and existing_default:
             logger.warning(
                 f"已存在默认 Agent '{existing_default.agent_id}'，新 Agent 不设为默认"

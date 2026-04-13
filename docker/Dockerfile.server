@@ -4,6 +4,7 @@ ENV TZ=Asia/Shanghai \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     PIP_CACHE_DIR=/root/.cache/pip \
+    PIP_DEFAULT_TIMEOUT=300 \
     NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
     npm_config_registry=https://registry.npmmirror.com \
     BUN_INSTALL=/root/.bun \
@@ -89,17 +90,17 @@ ENV PATH="$BUN_INSTALL/bin:$PATH"
 # pip 国内源
 # -------------------------
 RUN mkdir -p /etc/pip \
-    && printf "[global]\nindex-url = https://mirrors.aliyun.com/pypi/simple\ntrusted-host = mirrors.aliyun.com\n" > /etc/pip.conf
+    && printf "[global]\nindex-url = https://pypi.org/simple\ndefault-timeout = 300\nretries = 10\n" > /etc/pip.conf
 
 # -------------------------
 # 安装 Python 依赖（缓存优化）
 # -------------------------
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --retries 10 -r requirements.txt
 
 # 定制化安装 opensandbox 和opensandbox-code-interpreter
-RUN pip install --no-cache-dir opensandbox opensandbox-code-interpreter
+RUN pip install --no-cache-dir --retries 10 opensandbox opensandbox-code-interpreter
 
 # 复制代码
 COPY . .

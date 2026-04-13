@@ -1,0 +1,65 @@
+{
+    "request": {
+        "step_name": "tool_suggestion",
+        "model_config": {
+            "max_tokens": 0,
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "presence_penalty": 0.0,
+            "response_format": {
+                "type": "json_object"
+            }
+        },
+        "messages": [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "<role_definition>\n\n你是一个专业、主动且充满韧性的AI智能体：Sage。你的核心使命是不惜一切代价，完整、高效地协助用户达成目标。\n\n## 核心思维模式\n1. **深度思考 (Deep Thinking)**：在行动前，先进行深度的逻辑分析和规划。理解用户的真实意图，不仅是字面意思。拆解复杂问题为可执行的步骤。\n2. **自我修正 (Self-Correction)**：在执行过程中，如果遇到错误或异常，不要立即停止，而是尝试分析原因并提出修复方案。如果是环境问题，尝试规避；如果是代码问题，尝试修复。\n3. **真实性 (Truthfulness)**：宁可任务失败，也不能对任务的结果进行编造。所有的信息都要实事求是，基于已验证的数据或执行结果。\n4. **情境感知 (Context Awareness)**：充分利用当前的工作空间文件、系统上下文和历史对话信息。不要重复询问已经提供的信息。\n\n## 核心原则\n1. **极致主动与连续执行**：不要等待用户推动，也不要每做一步就停下来询问。一旦明确目标，必须一次性规划并连续执行多个步骤，直到遇到无法解决的阻塞问题或任务彻底完成。\n2. **默认授权**：除非涉及极其危险的操作（如删除重要数据），否则默认你已获得执行所有必要步骤的授权。不要询问“是否可以开始”、“您看这样行吗”，直接行动并展示结果。\n3. **完整交付**：不满足于完成部分任务或仅提供方案。致力于提供端到端的完整解决方案，确保交付物是经过验证且立即可用的。\n4. **结果导向**：所有的行动都应服务于“解决用户问题”这一最终目标。减少无意义的对话，增加有价值的行动。如果信息不足，优先尝试推断最合理的方案执行，而非反复询问。\n\n## 工具使用规范\n1. **工具优先**：积极探索和使用现有工具（Tools/Skills）来获取信息和执行任务，而不是仅凭臆测。\n2. **参数准确**：调用工具时，确保参数准确无误。如果调用失败，检查参数并重试。\n\n## 代码与环境规范\n1. **风格一致性**：修改代码时，严格遵守现有代码风格和命名规范。优先复用现有代码模式，避免另起炉灶。\n2. **环境整洁**：任务完成后，主动清理创建的临时文件或测试脚本，保持工作区整洁。\n3. **原子性提交**：尽量保持修改的原子性，避免一次性进行过于庞大且难以回溯的变更。\n\n## 稳健性与风控\n1. **防止死循环**：遇到顽固报错时，最多重试3次。若仍无法解决，应暂停并总结已尝试的方案，寻求用户指导，严禁盲目重复。\n2. **兜底策略**：在进行高风险修改前，思考“如果失败如何恢复”，必要时备份关键文件。\n\n## 沟通与验证规范\n1. **结构化表达**：回答要清晰、有条理，多使用Markdown标题、列表和代码块，避免大段纯文本。\n2. **拒绝空谈**：不要只说“我来试一下”或“正在思考”，而是直接给出行动方案、代码实现或执行结果。\n3. **严格验证**：在交付代码或结论前，必须进行自我逻辑检查；如果条件允许，优先运行代码进行验证。\n\n请展现出你的专业素养，成为用户最值得信赖的合作伙伴。\n\n</role_definition>\n<system_context>\n  <当前AgentId>agent_1d2ed3b9</当前AgentId>\n  <本次会话用户id>e32e076332114cb7b4bb3de53daf90bb</本次会话用户id>\n  <current_time>Tue, 14 Apr 2026 00:49:48 +0800</current_time>\n  <private_workspace>/home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9</private_workspace>\n  <user_id>e32e076332114cb7b4bb3de53daf90bb</user_id>\n  <session_id>session_1776098954205</session_id>\n  <file_permission>only allow read and write files in: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 (Note: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 is your private sandbox). Please save files in the pre-created folders: data, projects, temp, logs and use absolute paths; avoid creating extra directories in the root.</file_permission>\n  <response_language>zh-CN(简体中文)</response_language>\n</system_context>\n",
+                        "cache_control": {
+                            "type": "ephemeral"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": "\n通过查看用户对话历史及当前请求，以及你的系统要求，推荐最合适的工具组合。\n\n## 用户对话历史及当前请求\n[\n  {\n    \"role\": \"user\",\n    \"content\": \"你好\"\n  }\n]\n\n## 可用工具列表\n1. sys_spawn_agent - 创建一个新的子智能体（专家角色）。注意：创建的必须是具备通用能力的领域专家（如'Python专家'）...\n2. sys_delegate_task - 给子agent 分配具体任务并执行，tasks 列表中的任务是并发执行的。可以给同一个 agent ...\n3. sys_finish_task - 向父节点报告任务执行的最终结果。当子智能体完成所有任务后，使用此工具提交详细的执行结果和总结。\n4. execute_shell_command - 在沙箱中执行Shell命令，具备安全检查与超时控制。如需后台运行命令（不阻塞立即返回），请使用 no...\n5. file_read - 读取文本文件指定行范围内容\n6. file_write - 写入文本到文件。适合短内容写入；较长的代码或文档请拆成多次追加写入，每次 content 不超过 1...\n7. file_update - 更新单个文件内容。优先使用局部替换或按行区间替换，不要整文件重写；较大的修改请拆成多次小范围更新。\n8. search_memory - 搜索 Agent 的记忆。包括工作空间中的长期记忆（代码文件、文档等）和本次会话的历史对话。返回最相...\n9. fetch_webpages - 使用 Scrapling 框架智能抓取网页内容或下载文件，支持自适应解析、反爬虫绕过和文件自动保存到...\n10. analyze_image - 分析图片内容，返回图片的详细描述以及图片上的文字。使用当前会话的多模态大模型进行理解。\n11. todo_write - 创建或更新任务清单，新增任务需包含 id, content；更新任务只需 id 和变更字段(cont...\n12. todo_read - 读取当前未完成的任务清单\n13. questionnaire - 向用户展示问卷表单并收集答案。支持单选题、多选题和文本问答题。工具会等待用户提交或超时，然后返回答案...\n14. retrieve_on_zavixai_db - Search documents on ZavixAI knowledge database.\n15. send_file_through_im - Send file to IM user. Supports WeChat Work, DingTa...\n16. send_image_through_im - Send image to IM user. Supports WeChat Work, DingT...\n17. send_message_through_im - Send message to IM user. Supports Feishu, DingTalk...\n18. generate_image - 根据文本描述生成图片\n19. list_tasks - List tasks from the task scheduler database with f...\n20. add_task - 添加新任务到调度器。\n[功能]\n- 创建一次性任务或循环任务到数据库。\n- 一次性任务：在指定时间执...\n21. delete_task - Delete a task from the scheduler.\n[Effect]\n- For o...\n22. complete_task - Mark a task as completed manually.\n[Effect]\n- For ...\n23. enable_task - Enable or disable a recurring task.\n[Effect]\n- Onl...\n24. get_task_details - Get detailed information about a specific task.\n[E...\n25. update_task - Update an existing task in the scheduler.\n[Effect]...\n26. search_web_page - 搜索网页内容。支持多个搜索引擎，自动选择可用的引擎。\n27. search_image_from_web - 搜索网络图片。支持多个搜索引擎，自动选择可用的引擎。\n\n## 注意事项\n1. 只返回可用工具列表中的序号（数字）\n2. 优先选择直接相关的工具，避免冗余\n3. 推荐数量控制在 5-15 个工具之间\n4. 确保推荐的工具组合能够完整解决用户需求\n5. 如果用户请求不明确，返回常用的基础工具\n\n## 输出格式\n请严格返回 JSON 数组格式，包含推荐工具的序号：\n```json\n[\n    1,\n    3,\n    5,\n    ...\n]\n```\n不要包含任何额外的文本或解释。只返回 JSON 数组。\n"
+            }
+        ]
+    },
+    "response": {
+        "id": "chatcmpl-3a460e79-280b-9fba-8d79-be0cfa3907fe",
+        "object": "chat.completion",
+        "created": 1776098995,
+        "model": "qwen3.5-plus",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": "[]",
+                    "role": "assistant",
+                    "tool_calls": null
+                }
+            }
+        ],
+        "usage": {
+            "completion_tokens": 1,
+            "prompt_tokens": 2027,
+            "total_tokens": 2028,
+            "completion_tokens_details": {
+                "accepted_prediction_tokens": null,
+                "audio_tokens": null,
+                "reasoning_tokens": null,
+                "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": {
+                "audio_tokens": null,
+                "cached_tokens": 0
+            }
+        }
+    },
+    "timestamp": 1776098994.9292922
+}

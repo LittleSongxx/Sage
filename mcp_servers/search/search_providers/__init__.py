@@ -4,9 +4,10 @@
 提供统一的搜索引擎接口，支持多个搜索提供商：
 - SerpApi (searchapi.io)
 - Serper (Google搜索)
+- DashScope
 - Tavily
 - Brave
-- Zhipu (智谱AI)
+- Zhipu (智谱)
 - Bocha (博查)
 - Shuyan (数眼)
 
@@ -40,6 +41,7 @@ class SearchProviderEnum(Enum):
     """支持的搜索引擎提供商枚举"""
     SERPAPI = "serpapi"    # searchapi.io
     SERPER = "serper"      # serper.dev
+    DASHSCOPE = "dashscope"
     TAVILY = "tavily"
     BRAVE = "brave"
     ZHIPU = "zhipu"        # 智谱AI
@@ -51,6 +53,7 @@ class SearchProviderEnum(Enum):
 from .base import BaseSearchProvider
 from .serpapi_provider import SerpApiProvider
 from .serper_provider import SerperProvider
+from .dashscope_provider import DashScopeProvider
 from .tavily_provider import TavilyProvider
 from .brave_provider import BraveProvider
 from .zhipu_provider import ZhipuProvider
@@ -65,6 +68,7 @@ __all__ = [
     "SearchProviderEnum",
     "SerpApiProvider",
     "SerperProvider",
+    "DashScopeProvider",
     "TavilyProvider",
     "BraveProvider",
     "ZhipuProvider",

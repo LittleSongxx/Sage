@@ -1,0 +1,205 @@
+{
+    "session_id": "session_1776098954205",
+    "user_id": "e32e076332114cb7b4bb3de53daf90bb",
+    "parent_session_id": null,
+    "child_session_ids": [],
+    "status": "completed",
+    "created_at": 1776098988.1197805,
+    "updated_at": 1776099001.566352,
+    "session_root_space": "/home/song/code/Agent/Sage/sessions",
+    "session_workspace": "/home/song/code/Agent/Sage/sessions/session_1776098954205",
+    "sandbox_agent_workspace": "/home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9",
+    "system_context": {
+        "当前AgentId": "agent_1d2ed3b9",
+        "本次会话用户id": "e32e076332114cb7b4bb3de53daf90bb",
+        "current_time": "Tue, 14 Apr 2026 00:49:48 +0800",
+        "private_workspace": "/home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9",
+        "user_id": "e32e076332114cb7b4bb3de53daf90bb",
+        "session_id": "session_1776098954205",
+        "file_permission": "only allow read and write files in: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 (Note: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 is your private sandbox). Please save files in the pre-created folders: data, projects, temp, logs and use absolute paths; avoid creating extra directories in the root.",
+        "response_language": "zh-CN(简体中文)"
+    },
+    "audit_status": {
+        "deep_thinking": false,
+        "enable_plan": false,
+        "agent_mode": "fibre",
+        "more_suggest": false,
+        "force_summary": false,
+        "suggested_tools": [
+            "sys_finish_task",
+            "sys_delegate_task",
+            "file_write",
+            "search_memory",
+            "todo_read",
+            "todo_write",
+            "execute_shell_command",
+            "file_read",
+            "file_update",
+            "sys_spawn_agent",
+            "send_message_through_im"
+        ],
+        "self_check_attempts": 1,
+        "self_check_passed": true,
+        "self_check_issues": [],
+        "self_check_summary": "skip: no candidate files detected"
+    },
+    "tokens_usage_info": {
+        "total_info": {
+            "completion_tokens": 202,
+            "prompt_tokens": 18904,
+            "total_tokens": 19106,
+            "cached_tokens": 1102
+        },
+        "per_step_info": [
+            {
+                "step_name": "tool_suggestion",
+                "usage": {
+                    "completion_tokens": 1,
+                    "prompt_tokens": 2027,
+                    "total_tokens": 2028,
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": null,
+                        "audio_tokens": null,
+                        "reasoning_tokens": null,
+                        "rejected_prediction_tokens": null
+                    },
+                    "prompt_tokens_details": {
+                        "audio_tokens": null,
+                        "cached_tokens": 0
+                    }
+                }
+            },
+            {
+                "step_name": "memory_recall",
+                "usage": {
+                    "completion_tokens": 13,
+                    "prompt_tokens": 1389,
+                    "total_tokens": 1402,
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": null,
+                        "audio_tokens": null,
+                        "reasoning_tokens": null,
+                        "rejected_prediction_tokens": null
+                    },
+                    "prompt_tokens_details": {
+                        "audio_tokens": null,
+                        "cached_tokens": 0
+                    }
+                }
+            },
+            {
+                "step_name": "tool_suggestion",
+                "usage": {
+                    "completion_tokens": 32,
+                    "prompt_tokens": 2027,
+                    "total_tokens": 2059,
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": null,
+                        "audio_tokens": null,
+                        "reasoning_tokens": null,
+                        "rejected_prediction_tokens": null
+                    },
+                    "prompt_tokens_details": {
+                        "audio_tokens": null,
+                        "cached_tokens": 1102
+                    }
+                }
+            },
+            {
+                "step_name": "direct_execution",
+                "usage": {
+                    "completion_tokens": 129,
+                    "prompt_tokens": 8024,
+                    "total_tokens": 8153,
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": null,
+                        "audio_tokens": null,
+                        "reasoning_tokens": null,
+                        "rejected_prediction_tokens": null
+                    },
+                    "prompt_tokens_details": {
+                        "audio_tokens": null,
+                        "cached_tokens": 0
+                    }
+                }
+            },
+            {
+                "step_name": "task_complete_judge",
+                "usage": {
+                    "completion_tokens": 27,
+                    "prompt_tokens": 5437,
+                    "total_tokens": 5464,
+                    "completion_tokens_details": {
+                        "accepted_prediction_tokens": null,
+                        "audio_tokens": null,
+                        "reasoning_tokens": null,
+                        "rejected_prediction_tokens": null
+                    },
+                    "prompt_tokens_details": {
+                        "audio_tokens": null,
+                        "cached_tokens": 0
+                    }
+                }
+            }
+        ]
+    },
+    "agent_config": {
+        "id": "1776098993467",
+        "agent_id": "agent_1d2ed3b9",
+        "name": "Agent Session session_1776098954205",
+        "description": "Agent configuration for session session_1776098954205",
+        "system_prefix": "\n你是一个专业、主动且充满韧性的AI智能体：Sage。你的核心使命是不惜一切代价，完整、高效地协助用户达成目标。\n\n## 核心思维模式\n1. **深度思考 (Deep Thinking)**：在行动前，先进行深度的逻辑分析和规划。理解用户的真实意图，不仅是字面意思。拆解复杂问题为可执行的步骤。\n2. **自我修正 (Self-Correction)**：在执行过程中，如果遇到错误或异常，不要立即停止，而是尝试分析原因并提出修复方案。如果是环境问题，尝试规避；如果是代码问题，尝试修复。\n3. **真实性 (Truthfulness)**：宁可任务失败，也不能对任务的结果进行编造。所有的信息都要实事求是，基于已验证的数据或执行结果。\n4. **情境感知 (Context Awareness)**：充分利用当前的工作空间文件、系统上下文和历史对话信息。不要重复询问已经提供的信息。\n\n## 核心原则\n1. **极致主动与连续执行**：不要等待用户推动，也不要每做一步就停下来询问。一旦明确目标，必须一次性规划并连续执行多个步骤，直到遇到无法解决的阻塞问题或任务彻底完成。\n2. **默认授权**：除非涉及极其危险的操作（如删除重要数据），否则默认你已获得执行所有必要步骤的授权。不要询问“是否可以开始”、“您看这样行吗”，直接行动并展示结果。\n3. **完整交付**：不满足于完成部分任务或仅提供方案。致力于提供端到端的完整解决方案，确保交付物是经过验证且立即可用的。\n4. **结果导向**：所有的行动都应服务于“解决用户问题”这一最终目标。减少无意义的对话，增加有价值的行动。如果信息不足，优先尝试推断最合理的方案执行，而非反复询问。\n\n## 工具使用规范\n1. **工具优先**：积极探索和使用现有工具（Tools/Skills）来获取信息和执行任务，而不是仅凭臆测。\n2. **参数准确**：调用工具时，确保参数准确无误。如果调用失败，检查参数并重试。\n\n## 代码与环境规范\n1. **风格一致性**：修改代码时，严格遵守现有代码风格和命名规范。优先复用现有代码模式，避免另起炉灶。\n2. **环境整洁**：任务完成后，主动清理创建的临时文件或测试脚本，保持工作区整洁。\n3. **原子性提交**：尽量保持修改的原子性，避免一次性进行过于庞大且难以回溯的变更。\n\n## 稳健性与风控\n1. **防止死循环**：遇到顽固报错时，最多重试3次。若仍无法解决，应暂停并总结已尝试的方案，寻求用户指导，严禁盲目重复。\n2. **兜底策略**：在进行高风险修改前，思考“如果失败如何恢复”，必要时备份关键文件。\n\n## 沟通与验证规范\n1. **结构化表达**：回答要清晰、有条理，多使用Markdown标题、列表和代码块，避免大段纯文本。\n2. **拒绝空谈**：不要只说“我来试一下”或“正在思考”，而是直接给出行动方案、代码实现或执行结果。\n3. **严格验证**：在交付代码或结论前，必须进行自我逻辑检查；如果条件允许，优先运行代码进行验证。\n\n请展现出你的专业素养，成为用户最值得信赖的合作伙伴。\n",
+        "deep_thinking": false,
+        "agent_mode": "fibre",
+        "more_suggest": false,
+        "max_loop_count": 100,
+        "llm_config": {
+            "model": "qwen3.5-plus",
+            "maxTokens": 0,
+            "temperature": 0.7
+        },
+        "available_tools": [
+            "fetch_webpages",
+            "get_task_details",
+            "delete_task",
+            "analyze_image",
+            "search_memory",
+            "todo_read",
+            "enable_task",
+            "sys_spawn_agent",
+            "sys_delegate_task",
+            "file_write",
+            "todo_write",
+            "search_image_from_web",
+            "generate_image",
+            "file_update",
+            "update_task",
+            "complete_task",
+            "send_file_through_im",
+            "list_tasks",
+            "send_image_through_im",
+            "add_task",
+            "execute_shell_command",
+            "retrieve_on_zavixai_db",
+            "file_read",
+            "search_web_page",
+            "sys_finish_task",
+            "questionnaire",
+            "send_message_through_im"
+        ],
+        "available_skills": [],
+        "system_context": {
+            "当前AgentId": "agent_1d2ed3b9",
+            "本次会话用户id": "e32e076332114cb7b4bb3de53daf90bb",
+            "current_time": "Tue, 14 Apr 2026 00:49:48 +0800",
+            "private_workspace": "/home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9",
+            "user_id": "e32e076332114cb7b4bb3de53daf90bb",
+            "session_id": "session_1776098954205",
+            "file_permission": "only allow read and write files in: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 (Note: /home/song/code/Agent/Sage/agents/e32e076332114cb7b4bb3de53daf90bb/agent_1d2ed3b9 is your private sandbox). Please save files in the pre-created folders: data, projects, temp, logs and use absolute paths; avoid creating extra directories in the root.",
+            "response_language": "zh-CN(简体中文)"
+        },
+        "available_workflows": {},
+        "exportTime": "2026-04-14 00:49:53",
+        "version": "1.0"
+    }
+}

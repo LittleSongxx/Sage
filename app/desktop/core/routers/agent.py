@@ -330,7 +330,7 @@ async def set_default_agent(agent_id: str, http_request: Request):
     
     # 设置为默认
     dao = AgentConfigDao()
-    success = await dao.set_default(agent_id)
+    success = await dao.set_default(agent_id, user_id=get_desktop_user_id(http_request))
     
     if success:
         return await Response.succ(data={"agent_id": agent_id}, message=f"Agent '{agent_id}' 已设为默认")

@@ -6,6 +6,7 @@ from .agent import agent_router
 from .auth import auth_router
 from .chat import chat_router
 from .conversation import conversation_router
+from .im import im_router
 from .kdb import kdb_router
 from .mcp import mcp_router
 from .observability import observability_router
@@ -29,6 +30,7 @@ def register_routes(app):
     app.include_router(mcp_router)
     app.include_router(auth_router)
     app.include_router(agent_router)
+    app.include_router(im_router)
     app.include_router(conversation_router)
     app.include_router(tool_router)
     app.include_router(kdb_router)

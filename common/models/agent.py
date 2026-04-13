@@ -64,11 +64,14 @@ class AgentConfigDao(BaseDao):
             self, Agent, where=where, order_by=Agent.created_at
         )
 
-    async def get_default(self) -> Optional["Agent"]:
+    async def get_default(self, user_id: Optional[str] = None) -> Optional["Agent"]:
+        where = [Agent.is_default == True]  # noqa: E712
+        if user_id is not None:
+            where.append(Agent.user_id == user_id)
         return await BaseDao.get_first(
             self,
             Agent,
-            where=[Agent.is_default == True],  # noqa: E712
+            where=where,
             order_by=Agent.created_at,
         )
 
@@ -143,14 +146,22 @@ class AgentConfigDao(BaseDao):
     async def delete_by_id(self, agent_id: str) -> bool:
         return await BaseDao.delete_by_id(self, Agent, agent_id)
 
-    async def set_default(self, agent_id: str) -> bool:
+    async def set_default(self, agent_id: str, user_id: Optional[str] = None) -> bool:
         db = await self._get_db()
         async with db.get_session() as session:  # type: ignore[attr-defined]
             target = await session.get(Agent, agent_id)
             if not target:
                 return False
 
-            await session.execute(update(Agent).values(is_default=False))
+            scope_user_id = target.user_id if user_id is None else user_id
+            if scope_user_id is not None and target.user_id != scope_user_id:
+                return False
+
+            stmt = update(Agent).values(is_default=False)
+            if scope_user_id is not None:
+                stmt = stmt.where(Agent.user_id == scope_user_id)
+
+            await session.execute(stmt)
             target.is_default = True
             target.updated_at = get_local_now()
             session.add(target)

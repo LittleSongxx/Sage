@@ -1,3 +1,4 @@
+name: sage
 services:
   sage-server:
     restart: always
@@ -31,6 +32,12 @@ services:
       - apparmor=unconfined
     mem_limit: 16g
     cpus: 4.0
+    depends_on:
+      - sage-mysql
+      - sage-es
+      - sage-rustfs
+      - sage-jaeger
+      - sage-embedding
 
   sage-web:
     restart: always
@@ -46,12 +53,29 @@ services:
     ports:
       - 30051:80
     environment:
-      TZ: 'Asia/Shanghai'
+      TZ: "Asia/Shanghai"
       VITE_SAGE_API_BASE_URL: ${SAGE_API_BASE_URL}
       VITE_SAGE_TRACE_WEB_URL: ${SAGE_TRACE_WEB_URL}
       VITE_SAGE_WEB_BASE_PATH: ${SAGE_WEB_BASE_PATH:-/sage/}
     depends_on:
       - sage-server
+
+  sage-embedding:
+    restart: always
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
+    container_name: sage-embedding
+    ports:
+      - 30056:80
+    command:
+      - --model-id
+      - BAAI/bge-small-zh-v1.5
+      - --port
+      - "80"
+      - --auto-truncate
+    volumes:
+      - ${SAGE_ROOT}/embedding/cache:/data
+    mem_limit: 4g
+    cpus: 2.0
 
   sage-wiki:
     restart: always
@@ -65,7 +89,7 @@ services:
     ports:
       - 30057:80
     environment:
-      TZ: 'Asia/Shanghai'
+      TZ: "Asia/Shanghai"
       VITE_SAGE_API_BASE_URL: ${SAGE_API_BASE_URL}
     depends_on:
       - sage-server
@@ -79,9 +103,9 @@ services:
     ports:
       - 30052:3306
     environment:
-      TZ: 'Asia/Shanghai'
+      TZ: "Asia/Shanghai"
       MYSQL_ROOT_PASSWORD: ${SAGE_MYSQL_PASSWORD}
-      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_HOST: "%"
     ulimits:
       memlock:
         soft: -1
@@ -137,8 +161,9 @@ services:
       test:
         [
           "CMD",
-          "sh", "-c",
-          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health"
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health",
         ]
       interval: 30s
       timeout: 10s
@@ -156,8 +181,9 @@ services:
     volumes:
       - ./docker/jaeger/config.yaml:/etc/jaeger/config.yaml:ro
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "16686:16686" # Jaeger Query UI
     expose:
       - "16686"
       - "13133"

@@ -103,6 +103,15 @@ export const agentAPI = {
   },
 
   /**
+   * 设置默认Agent
+   * @param {string} agentId - Agent ID
+   * @returns {Promise<Object>}
+   */
+  setDefaultAgent: async (agentId) => {
+    return await request.post(`/api/agent/${agentId}/set-default`)
+  },
+
+  /**
    * 智能生成Agent配置
    * @param {string} description - Agent描述
    * @param {Array} selectedTools - 选中的工具列表
