@@ -223,3 +223,7 @@ app/desktop/scripts/certs
 .build_cache/
 
 .sandbox
+
+# Runtime data
+agents/
+sessions/
