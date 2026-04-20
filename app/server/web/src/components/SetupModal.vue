@@ -180,15 +180,19 @@ const buildApiKeys = () => {
   return apiKey ? [apiKey] : []
 }
 
+const buildOptionalMaxTokensPayload = () => {
+  const rawValue = `${form.maxTokens ?? ''}`.trim()
+  if (!rawValue) return {}
+  const maxTokensValue = Number(rawValue)
+  return Number.isFinite(maxTokensValue) && maxTokensValue > 0 ? { max_tokens: maxTokensValue } : {}
+}
+
 const buildProviderPayload = () => ({
   name: form.name,
   base_url: form.base_url,
   api_keys: buildApiKeys(),
   model: form.model,
-  ...(() => {
-    const maxTokensValue = Number(form.maxTokens)
-    return Number.isFinite(maxTokensValue) ? { max_tokens: maxTokensValue } : {}
-  })(),
+  ...buildOptionalMaxTokensPayload(),
   temperature: form.temperature,
   top_p: form.topP,
   presence_penalty: form.presencePenalty,

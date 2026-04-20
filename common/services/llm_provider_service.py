@@ -127,6 +127,15 @@ async def list_providers(user_id: str) -> List[Dict[str, Any]]:
     return [provider.to_dict() for provider in providers]
 
 
+async def sanitize_invalid_provider_max_tokens(user_id: Optional[str] = None) -> int:
+    sanitized_count = await LLMProviderDao().sanitize_invalid_max_tokens(user_id=user_id)
+    if sanitized_count:
+        logger.warning(
+            f"[LLMProvider] Sanitized {sanitized_count} provider(s) with invalid max_tokens"
+        )
+    return sanitized_count
+
+
 async def create_provider(
     data: LLMProviderCreate,
     *,
@@ -158,7 +167,7 @@ async def create_provider(
         base_url=normalized_base_url or "",
         api_keys=data.api_keys,
         model=data.model,
-        max_tokens=data.max_tokens,
+        max_tokens=LLMProvider.normalize_max_tokens(data.max_tokens),
         temperature=data.temperature,
         top_p=data.top_p,
         presence_penalty=data.presence_penalty,
@@ -195,8 +204,8 @@ async def update_provider(
         provider.api_keys = data.api_keys
     if data.model is not None:
         provider.model = data.model
-    if data.max_tokens is not None:
-        provider.max_tokens = data.max_tokens
+    if "max_tokens" in data.model_fields_set:
+        provider.max_tokens = LLMProvider.normalize_max_tokens(data.max_tokens)
     if data.temperature is not None:
         provider.temperature = data.temperature
     if data.top_p is not None:

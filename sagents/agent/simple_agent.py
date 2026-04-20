@@ -850,7 +850,7 @@ class SimpleAgent(AgentBase):
 
         # 2. 检查是否需要压缩
         max_model_len = self.model_config.get('max_model_len', 64000)
-        max_new_tokens = self.model_config.get('max_tokens', 20000)
+        max_new_tokens = self.model_config.get('max_tokens') or 20000
         should_compress, current_tokens, max_model_len = MessageManager.should_compress_messages(
             extracted_messages, max_model_len, max_new_tokens
         )

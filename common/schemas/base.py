@@ -15,6 +15,16 @@ def _validate_single_api_key(api_keys: List[str]) -> List[str]:
     return normalized_keys
 
 
+def _normalize_optional_positive_int(value: Any) -> Any:
+    if value is None or value == "":
+        return None
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError):
+        return value
+    return normalized if normalized > 0 else None
+
+
 class LLMProviderBase(BaseModel):
     name: str
     base_url: str
@@ -32,6 +42,11 @@ class LLMProviderBase(BaseModel):
     @classmethod
     def validate_api_keys(cls, value: List[str]) -> List[str]:
         return _validate_single_api_key(value)
+
+    @field_validator("max_tokens", mode="before")
+    @classmethod
+    def normalize_max_tokens(cls, value: Any) -> Any:
+        return _normalize_optional_positive_int(value)
 
 
 class LLMProviderCreate(LLMProviderBase):
@@ -57,6 +72,11 @@ class LLMProviderUpdate(BaseModel):
         if value is None:
             return value
         return _validate_single_api_key(value)
+
+    @field_validator("max_tokens", mode="before")
+    @classmethod
+    def normalize_max_tokens(cls, value: Any) -> Any:
+        return _normalize_optional_positive_int(value)
 
 
 class LLMProviderDTO(LLMProviderBase):

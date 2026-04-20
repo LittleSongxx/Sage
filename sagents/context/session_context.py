@@ -811,9 +811,16 @@ class SessionContext:
         # 从model_config中提取llmConfig信息
         llm_config = {}
         if model_config:
+            max_tokens = model_config.get("max_tokens", "")
+            try:
+                max_tokens = int(max_tokens)
+            except (TypeError, ValueError):
+                max_tokens = ""
+            if max_tokens != "" and max_tokens <= 0:
+                max_tokens = ""
             llm_config = {
                 "model": model_config.get("model", ""),
-                "maxTokens": model_config.get("max_tokens", ""),
+                "maxTokens": max_tokens,
                 "temperature": model_config.get("temperature", "")
             }
 

@@ -26,7 +26,7 @@ from common.models.agent import AgentConfigDao
 from common.models.conversation import ConversationDao
 from common.models.im_channel import IMChannelConfigDao
 from common.models.kdb import KdbDao
-from common.models.llm_provider import LLMProviderDao
+from common.models.llm_provider import LLMProvider, LLMProviderDao
 from common.services.chat_processor import ContentProcessor
 from common.services.chat_utils import (
     create_model_client,
@@ -579,6 +579,14 @@ async def populate_request_from_agent_config(
     if request.llm_model_config is None:
         request.llm_model_config = {}
 
+    request_max_tokens = LLMProvider.normalize_max_tokens(
+        request.llm_model_config.get("max_tokens")
+    )
+    if request_max_tokens is None:
+        request.llm_model_config.pop("max_tokens", None)
+    else:
+        request.llm_model_config["max_tokens"] = request_max_tokens
+
     provider_dao = LLMProviderDao()
     provider_id = agent_config.get("llm_provider_id") if agent_config else None
     if provider_id:
@@ -586,8 +594,11 @@ async def populate_request_from_agent_config(
         request.llm_model_config["base_url"] = provider.base_url
         request.llm_model_config["api_key"] = _get_provider_api_key(provider)
         request.llm_model_config["model"] = provider.model
-        if provider.max_tokens is not None:
-            request.llm_model_config["max_tokens"] = provider.max_tokens
+        provider_max_tokens = LLMProvider.normalize_max_tokens(provider.max_tokens)
+        if provider_max_tokens is not None:
+            request.llm_model_config["max_tokens"] = provider_max_tokens
+        else:
+            request.llm_model_config.pop("max_tokens", None)
         request.llm_model_config["temperature"] = provider.temperature
         request.llm_model_config["top_p"] = provider.top_p
         request.llm_model_config["presence_penalty"] = provider.presence_penalty
@@ -600,8 +611,9 @@ async def populate_request_from_agent_config(
             request.llm_model_config["api_key"] = _get_provider_api_key(provider)
         if request.llm_model_config.get("model") is None:
             request.llm_model_config["model"] = provider.model
-        if request.llm_model_config.get("max_tokens") is None and provider.max_tokens is not None:
-            request.llm_model_config["max_tokens"] = provider.max_tokens
+        provider_max_tokens = LLMProvider.normalize_max_tokens(provider.max_tokens)
+        if request.llm_model_config.get("max_tokens") is None and provider_max_tokens is not None:
+            request.llm_model_config["max_tokens"] = provider_max_tokens
         if request.llm_model_config.get("temperature") is None:
             request.llm_model_config["temperature"] = provider.temperature
         if request.llm_model_config.get("top_p") is None:

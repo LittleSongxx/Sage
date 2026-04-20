@@ -353,6 +353,7 @@ async def ensure_system_init(cfg: StartupConfig):
     from common.models.llm_provider import LLMProvider, LLMProviderDao
     from common.models.system import SystemInfoDao
     from common.models.user import User, UserDao
+    from common.services.llm_provider_service import sanitize_invalid_provider_max_tokens
     from common.services.oauth.helpers import hash_password
     from common.services.oauth.provider import sync_oauth2_clients
     from common.utils.id import gen_id
@@ -394,6 +395,8 @@ async def ensure_system_init(cfg: StartupConfig):
     await sync_oauth2_clients()
     logger.debug("OAuth2 Clients 配置同步完成")
 
+    await sanitize_invalid_provider_max_tokens()
+
     dao = LLMProviderDao()
     default_provider = await dao.get_default()
     if not cfg.default_llm_api_key or not cfg.default_llm_api_base_url:
@@ -406,7 +409,7 @@ async def ensure_system_init(cfg: StartupConfig):
     # Models
     model = cfg.default_llm_model_name or "gpt-4o"
     base_url = cfg.default_llm_api_base_url or "https://api.openai.com/v1"
-    max_tokens = cfg.default_llm_max_tokens
+    max_tokens = LLMProvider.normalize_max_tokens(cfg.default_llm_max_tokens)
     temperature = cfg.default_llm_temperature or 0.7
     max_model_len = cfg.default_llm_max_model_len or 64000
     top_p = cfg.default_llm_top_p or 0.9
@@ -428,7 +431,7 @@ async def ensure_system_init(cfg: StartupConfig):
             max_model_len=max_model_len
         )
         if max_tokens is not None:
-            provider.max_tokens = int(max_tokens)
+            provider.max_tokens = max_tokens
         await dao.save(provider)
         logger.debug("Initialized default LLM Provider from environment variables.")
     else:
@@ -436,7 +439,7 @@ async def ensure_system_init(cfg: StartupConfig):
         default_provider.base_url = base_url
         default_provider.api_keys = [api_key]
         default_provider.model = model
-        default_provider.max_tokens = int(max_tokens) if max_tokens is not None else None
+        default_provider.max_tokens = max_tokens
         default_provider.temperature = temperature
         default_provider.top_p = top_p
         default_provider.presence_penalty = presence_penalty

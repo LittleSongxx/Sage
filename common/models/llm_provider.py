@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, String, Boolean, Integer, Float, func, select
+from sqlalchemy import JSON, String, Boolean, Integer, Float, func, select, update
 from sqlalchemy.orm import Mapped, mapped_column
 
 from common.models.base import Base, BaseDao, get_local_now
@@ -17,7 +17,7 @@ class LLMProvider(Base):
     base_url: Mapped[str] = mapped_column(String(255), nullable=False)
     api_keys: Mapped[List[str]] = mapped_column(JSON, nullable=False)
     model: Mapped[str] = mapped_column(String(255), nullable=False)
-    max_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
+    max_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     temperature: Mapped[float] = mapped_column(Float, nullable=True)
     top_p: Mapped[float] = mapped_column(Float, nullable=True)
     presence_penalty: Mapped[float] = mapped_column(Float, nullable=True)
@@ -51,7 +51,7 @@ class LLMProvider(Base):
         self.base_url = base_url
         self.api_keys = self.normalize_api_keys(api_keys)
         self.model = model
-        self.max_tokens = max_tokens
+        self.max_tokens = self.normalize_max_tokens(max_tokens)
         self.temperature = temperature
         self.top_p = top_p
         self.presence_penalty = presence_penalty
@@ -77,6 +77,18 @@ class LLMProvider(Base):
 
         return [api_key]
 
+    @staticmethod
+    def normalize_max_tokens(max_tokens: Optional[int]) -> Optional[int]:
+        if max_tokens is None:
+            return None
+
+        try:
+            normalized = int(max_tokens)
+        except (TypeError, ValueError):
+            return None
+
+        return normalized if normalized > 0 else None
+
     @property
     def api_key(self) -> Optional[str]:
         return self.api_keys[0] if self.api_keys else None
@@ -88,7 +100,7 @@ class LLMProvider(Base):
             "base_url": self.base_url,
             "api_keys": self.api_keys,
             "model": self.model,
-            "max_tokens": self.max_tokens,
+            "max_tokens": self.normalize_max_tokens(self.max_tokens),
             "temperature": self.temperature,
             "top_p": self.top_p,
             "presence_penalty": self.presence_penalty,
@@ -106,6 +118,7 @@ class LLMProviderDao(BaseDao):
 
     async def save(self, provider: "LLMProvider") -> bool:
         provider.api_keys = LLMProvider.normalize_api_keys(provider.api_keys)
+        provider.max_tokens = LLMProvider.normalize_max_tokens(provider.max_tokens)
         provider.updated_at = get_local_now()
         return await BaseDao.save(self, provider)
 
@@ -154,3 +167,18 @@ class LLMProviderDao(BaseDao):
         if user_id is not None:
             where.append(LLMProvider.user_id == user_id)
         return await BaseDao.get_first(self, LLMProvider, where=where)
+
+    async def sanitize_invalid_max_tokens(self, user_id: Optional[str] = None) -> int:
+        where = [LLMProvider.max_tokens <= 0]
+        if user_id is not None:
+            where.append(LLMProvider.user_id == user_id)
+
+        db = await self._get_db()
+        async with db.get_session() as session:  # type: ignore[attr-defined]
+            stmt = update(LLMProvider)
+            for cond in where:
+                stmt = stmt.where(cond)
+            result = await session.execute(
+                stmt.values(max_tokens=None, updated_at=get_local_now())
+            )
+            return int(result.rowcount or 0)

@@ -256,6 +256,43 @@ curl_local() {
     curl --noproxy "*" -fsS --max-time "$timeout_seconds" "$url"
 }
 
+is_tcp_port_open() {
+    local host="$1"
+    local port="$2"
+    timeout 2 bash -lc "</dev/tcp/$host/$port" >/dev/null 2>&1
+}
+
+find_available_local_port() {
+    local host="$1"
+    local start_port="$2"
+    local label="$3"
+    local max_attempts="${4:-50}"
+    local port="$start_port"
+    local attempts=0
+    while [ "$attempts" -lt "$max_attempts" ]; do
+        if ! is_tcp_port_open "$host" "$port"; then
+            printf '%s\n' "$port"
+            return 0
+        fi
+        port=$((port + 1))
+        attempts=$((attempts + 1))
+    done
+    log_fail "Could not find an available local port for $label starting from $start_port"
+    exit 1
+}
+
+is_sage_backend_response() {
+    local url="$1"
+    local response
+    response="$(curl_local "$url/api/health" 3 2>/dev/null || true)"
+    if [ -z "$response" ]; then
+        return 1
+    fi
+    printf '%s' "$response" | grep -q '"status"' &&
+        printf '%s' "$response" | grep -q '"timestamp"' &&
+        printf '%s' "$response" | grep -q '"service"'
+}
+
 require_http_service() {
     local url="$1"
     local name="$2"
@@ -320,7 +357,7 @@ wait_for_backend() {
     local pid="$2"
     begin_wait "Waiting for backend health ($url/api/health)"
     for _ in $(seq 1 60); do
-        if curl_local "$url/api/health" 3 >/dev/null 2>&1; then
+        if is_sage_backend_response "$url"; then
             end_wait "ok"
             return 0
         fi
@@ -390,8 +427,6 @@ ensure_frontend_dependencies
 BACKEND_PORT="${BACKEND_PORT:-${SAGE_PORT:-8080}}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 FRONTEND_BASE_PATH="$(normalize_base_path "${FRONTEND_BASE_PATH:-${VITE_SAGE_WEB_BASE_PATH:-/sage/}}")"
-BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}"
-FRONTEND_URL="http://127.0.0.1:${FRONTEND_PORT}${FRONTEND_BASE_PATH}"
 FRONTEND_API_PREFIX="${FRONTEND_API_PREFIX:-${VITE_BACKEND_API_PREFIX:-/dev-api}}"
 FRONTEND_TRACE_URL="${FRONTEND_TRACE_URL:-${VITE_SAGE_TRACE_WEB_URL:-http://127.0.0.1:30051/jaeger/}}"
 MYSQL_HOST_RUNTIME="${SAGE_MYSQL_HOST_OVERRIDE:-127.0.0.1}"
@@ -405,6 +440,26 @@ EMBEDDING_BASE_RUNTIME="${SAGE_EMBEDDING_BASE_URL_OVERRIDE:-${SAGE_EMBEDDING_BAS
 if [ -z "${SAGE_EMBEDDING_BASE_URL_OVERRIDE:-}" ] && { [ -z "$EMBEDDING_BASE_RUNTIME" ] || printf '%s' "$EMBEDDING_BASE_RUNTIME" | grep -q 'sage-embedding'; }; then
     EMBEDDING_BASE_RUNTIME="http://127.0.0.1:30056/v1"
 fi
+
+if is_sage_backend_response "http://127.0.0.1:${BACKEND_PORT}"; then
+    log_fail "Sage backend already responds at http://127.0.0.1:${BACKEND_PORT}"
+    exit 1
+fi
+
+if is_tcp_port_open "127.0.0.1" "$BACKEND_PORT"; then
+    original_backend_port="$BACKEND_PORT"
+    BACKEND_PORT="$(find_available_local_port "127.0.0.1" $((BACKEND_PORT + 1)) "backend")"
+    log_warn "Backend port $original_backend_port is already in use by another local service; switching to $BACKEND_PORT"
+fi
+
+if is_tcp_port_open "127.0.0.1" "$FRONTEND_PORT"; then
+    original_frontend_port="$FRONTEND_PORT"
+    FRONTEND_PORT="$(find_available_local_port "127.0.0.1" $((FRONTEND_PORT + 1)) "frontend")"
+    log_warn "Frontend port $original_frontend_port is already in use by another local service; switching to $FRONTEND_PORT"
+fi
+
+BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}"
+FRONTEND_URL="http://127.0.0.1:${FRONTEND_PORT}${FRONTEND_BASE_PATH}"
 
 start_stage "Checking Docker-backed dependencies"
 export SAGE_PORT="$BACKEND_PORT"
@@ -445,7 +500,7 @@ if [ -n "$EMBEDDING_BASE_RUNTIME" ] && printf '%s' "$EMBEDDING_BASE_RUNTIME" | g
     require_http_service "http://127.0.0.1:30056/health" "Embedding"
 fi
 
-if curl_local "$BACKEND_URL/api/health" 3 >/dev/null 2>&1; then
+if is_sage_backend_response "$BACKEND_URL"; then
     log_fail "Backend already responds at $BACKEND_URL"
     exit 1
 fi

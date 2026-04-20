@@ -271,6 +271,16 @@ class AgentBase(ABC):
         final_config.pop('api_key', None)
         final_config.pop('maxTokens', None)
         final_config.pop('base_url', None)
+        max_tokens = final_config.get('max_tokens')
+        if max_tokens is not None:
+            try:
+                max_tokens = int(max_tokens)
+            except (TypeError, ValueError):
+                max_tokens = None
+            if max_tokens is None or max_tokens <= 0:
+                final_config.pop('max_tokens', None)
+            else:
+                final_config['max_tokens'] = max_tokens
         # 移除快速模型相关配置（这些是我们内部使用的参数）
         final_config.pop('fast_api_key', None)
         final_config.pop('fast_base_url', None)

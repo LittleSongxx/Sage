@@ -28,6 +28,9 @@ async def initialize_db_connection():
                 
             logger.debug("数据库自动建表完成")
         try:
+            from common.services.llm_provider_service import sanitize_invalid_provider_max_tokens
+            await sanitize_invalid_provider_max_tokens(user_id=DEFAULT_DESKTOP_USER_ID)
+
             # Load default provider settings first
             from common.models.llm_provider import LLMProviderDao
             llm_dao = LLMProviderDao()
